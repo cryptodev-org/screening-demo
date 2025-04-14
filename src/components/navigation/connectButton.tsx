@@ -2,6 +2,8 @@ import Box from "@mui/material/Box"
 import { useEffect, useState } from "react";
 import { chainIdToName, getNativeTokenSymbol, IS_WALLET_CONNECTED } from "./navigation.data";
 import { ethers, isAddress } from "ethers";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const ConnectButton = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -76,7 +78,7 @@ const ConnectButton = () => {
 
   useEffect(() => {
 
-    if(JSON.parse(localStorage.getItem(IS_WALLET_CONNECTED) || 'false')) {
+    if (JSON.parse(localStorage.getItem(IS_WALLET_CONNECTED) || 'false')) {
       connectWallet()
     }
 
@@ -84,49 +86,85 @@ const ConnectButton = () => {
       window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);
       window.ethereum?.removeListener("chainChanged", handleChainChanged);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(()=>{
-    if(!walletAddress || !chainId) return
+  useEffect(() => {
+    if (!walletAddress || !chainId) return
 
     handleGetBalance(walletAddress)
 
   }, [walletAddress, chainId])
 
 
-  return <Box
-    onClick={toggleWalletConnection}
-    sx={{
-      position: "relative",
-      color: "white",
-      cursor: "pointer",
-      textDecoration: "none",
-      textTransform: "uppercase",
-      fontWeight: 600,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      px: { xs: 0, lg: 3 },
-      mb: { xs: 3, lg: 0 },
-      fontSize: "18px",
-      width: "324px",
-      height: "45px",
-      borderRadius: "6px",
-      backgroundColor: walletAddress ? "#ff5252" : "#00dbe3",
-      flexDirection: "column",
-      textAlign: "center",
-      transition: "0.3s all ease-in-out"
-    }}
-  >
-    {walletAddress
-      ? `Disconnect (${walletAddress.includes(".eth") ? walletAddress : `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`})`
-      : "Connect Wallet"}
-    {walletAddress && chainId && balance && (
-      <Box sx={{ fontSize: "12px", color: "#fff", fontWeight: 500, mt: 0.5 }}>
-        {chainIdToName[chainId] || `Chain ${chainId}`} {balance && `- ${+parseFloat(balance).toFixed(7)} ${getNativeTokenSymbol(chainId)}`}
+  return <Box sx={{ display: "flex", alignItems: "center", justifyContent: 'center', gap: 1.2, width: "324px" }}>
+    {walletAddress && chainId && balance && <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+      <Box sx={{ fontSize: "14px", fontWeight: 600, color: "#fff" }}>
+        {walletAddress.includes(".eth")
+          ? walletAddress
+          : `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
       </Box>
-    )}
+      <Box sx={{ display: "flex", gap: 2, fontSize: "13px", fontWeight: 500 }}>
+        <Box
+          sx={{
+            background: "#ffffff22",
+            px: 2,
+            py: 0.5,
+            borderRadius: "6px",
+            color: "#fff",
+          }}
+        >
+          {chainIdToName[chainId] || `${chainId}`}
+        </Box>
+        <Box
+          sx={{
+            background: "#ffffff22",
+            px: 2,
+            py: 0.5,
+            borderRadius: "6px",
+            color: "#fff",
+          }}
+        >
+          {+parseFloat(balance).toFixed(5)} {getNativeTokenSymbol(chainId)}
+        </Box>
+      </Box>
+
+    </Box>}
+    <Box
+      onClick={toggleWalletConnection}
+      sx={{
+        color: "white",
+        cursor: "pointer",
+        textDecoration: "none",
+        textTransform: "uppercase",
+        fontWeight: 600,
+        fontSize: "18px",
+        width: walletAddress ? "48px" : '100%',
+        padding: "10px",
+        borderRadius: "10px",
+        background: walletAddress ? "linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)" : "linear-gradient(270deg, #00dbde, #fc00ff, #ff4b2b, #00dbde)",
+        backgroundSize: walletAddress ? undefined : "600% 600%",
+        animation: walletAddress ? undefined : "gradientShift 5s ease infinite",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "transform 0.3s ease-in-out",
+        "&:hover": {
+          transform: "scale(1.05)",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+        },
+      }}
+    >
+      {walletAddress ? (
+        <LogoutIcon />
+      ) : (
+        <>
+          <AccountBalanceWalletIcon sx={{ mr: 1 }} />
+          Connect Wallet
+        </>
+      )}
+    </Box>
   </Box>
 
 }
