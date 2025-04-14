@@ -1,28 +1,43 @@
 import Box from "@mui/material/Box"
 import { useEffect, useState } from "react";
-import { chainIdToName } from "./navigation.data";
-import { ethers } from "ethers";
+import { chainIdToName, getNativeTokenSymbol } from "./navigation.data";
+import { ethers, isAddress } from "ethers";
 
 const ConnectButton = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [networkName, setNetworkName] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
+  const [balance, setBalance] = useState<string | null>('0');
+
+  const handleAccountsChanged = (accounts: string[]) => {
+    if (accounts.length === 0) {
+      disconnectWallet();
+    } else {
+      setWalletAddress(accounts[0]);
+    }
+  };
+
+  const handleChainChanged = async () => {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const network = await provider.getNetwork();
+    setChainId(network.chainId.toString());
+  };
 
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
-        alert("MetaMask не установлен!");
         return;
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
-
-      const ensName = await provider.lookupAddress(address);
       const network = await provider.getNetwork();
 
-      setWalletAddress(ensName || address);
-      setNetworkName(chainIdToName[network.chainId.toString()] || `Chain ${network.chainId}`);
+      setWalletAddress(address);
+      setChainId(network.chainId.toString());
+
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+      window.ethereum.on("chainChanged", handleChainChanged);
     } catch (err) {
       console.error(err);
     }
@@ -30,45 +45,50 @@ const ConnectButton = () => {
 
   const disconnectWallet = () => {
     setWalletAddress(null);
-    setNetworkName(null);
+    setChainId(null);
   };
 
   const toggleWalletConnection = () => {
+
+    if (!window.ethereum) {
+      alert("Please install MetaMask to continue.");
+      return;
+    }
+
     if (walletAddress) {
       disconnectWallet();
-    } else {
-      connectWallet();
+      return
     }
+
+    connectWallet();
   };
 
+  const handleGetBalance = async (address: string) => {
+    if (!window.ethereum || !isAddress(address)) {
+      return;
+    }
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const weiBalance = await provider.getBalance(address);
+    setBalance(ethers.formatEther(weiBalance));
+  }
+
   useEffect(() => {
-    if (!walletAddress) return
-
-    const handleChainChanged = async () => {
-      if (!window.ethereum) return;
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const network = await provider.getNetwork();
-      setNetworkName(chainIdToName[network.chainId.toString()] || `Chain ${network.chainId}`);
-    };
-
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
-        disconnectWallet();
-      } else {
-        setWalletAddress(accounts[0]);
-      }
-    };
-
-    window.ethereum.on("chainChanged", handleChainChanged);
-    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    connectWallet()
 
     return () => {
-      if (!window.ethereum?.removeListener) {
-        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
-        window.ethereum.removeListener("chainChanged", handleChainChanged);
-      }
+      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);
+      window.ethereum?.removeListener("chainChanged", handleChainChanged);
     };
-  }, [walletAddress]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(()=>{
+    if(!walletAddress || !chainId) return
+
+    handleGetBalance(walletAddress)
+
+  }, [walletAddress, chainId])
+
 
   return <Box
     onClick={toggleWalletConnection}
@@ -97,9 +117,9 @@ const ConnectButton = () => {
     {walletAddress
       ? `Disconnect (${walletAddress.includes(".eth") ? walletAddress : `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`})`
       : "Connect Wallet"}
-    {networkName && (
+    {walletAddress && chainId && balance && (
       <Box sx={{ fontSize: "12px", color: "#fff", fontWeight: 500, mt: 0.5 }}>
-        {networkName}
+        {chainIdToName[chainId] || `Chain ${chainId}`} {balance && `- ${+parseFloat(balance).toFixed(7)} ${getNativeTokenSymbol(chainId)}`}
       </Box>
     )}
   </Box>
