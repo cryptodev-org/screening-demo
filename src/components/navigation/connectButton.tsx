@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box"
 import { useEffect, useState } from "react";
-import { chainIdToName, getNativeTokenSymbol } from "./navigation.data";
+import { chainIdToName, getNativeTokenSymbol, IS_WALLET_CONNECTED } from "./navigation.data";
 import { ethers, isAddress } from "ethers";
 
 const ConnectButton = () => {
@@ -35,6 +35,7 @@ const ConnectButton = () => {
 
       setWalletAddress(address);
       setChainId(network.chainId.toString());
+      localStorage.setItem(IS_WALLET_CONNECTED, 'true');
 
       window.ethereum.on("accountsChanged", handleAccountsChanged);
       window.ethereum.on("chainChanged", handleChainChanged);
@@ -46,6 +47,7 @@ const ConnectButton = () => {
   const disconnectWallet = () => {
     setWalletAddress(null);
     setChainId(null);
+    localStorage.removeItem(IS_WALLET_CONNECTED);
   };
 
   const toggleWalletConnection = () => {
@@ -73,7 +75,10 @@ const ConnectButton = () => {
   }
 
   useEffect(() => {
-    connectWallet()
+
+    if(JSON.parse(localStorage.getItem(IS_WALLET_CONNECTED) || 'false')) {
+      connectWallet()
+    }
 
     return () => {
       window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);

@@ -32,3 +32,5 @@ const nativeSymbols: Record<string, string> = {
 export const getNativeTokenSymbol = (chainId: string): string => {
   return nativeSymbols[chainId] || "ETH";
 };
+
+export const IS_WALLET_CONNECTED = "IS_WALLET_CONNECTED";
