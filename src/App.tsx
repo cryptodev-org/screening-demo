@@ -7,13 +7,22 @@ import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { useRoutes } from "react-router-dom";
 import Router from "./routes/Router";
 import theme from "./theme";
+import {WagmiProvider} from "wagmi";
+import {wagmiConfig} from "./config/wagmi";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+
+const queryClient = new QueryClient()
 
 function App() {
   const routing = useRoutes(Router);
   return (
-    <ThemeProvider theme={theme}>
-      <div className="App">{routing}</div>
-    </ThemeProvider>
+    <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider theme={theme}>
+                <div className="App">{routing}</div>
+            </ThemeProvider>
+        </QueryClientProvider>
+    </WagmiProvider>
   );
 }
 
